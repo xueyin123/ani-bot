@@ -3,4 +3,6 @@ transmissionrpc>=0.11
 python-qbittorrent>=0.4
 schedule>=1.2.0
 PyYAML>=6.0
+fastapi>=0.68.0
+uvicorn>=0.15.0
 dataclasses; python_version < '3.7'

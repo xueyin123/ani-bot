@@ -19,8 +19,8 @@ RUN mkdir -p /app/data /app/logs /app/downloads
 # 设置环境变量
 ENV PYTHONPATH=/app
 
-# 暴露端口（如果需要Web界面的话）
-EXPOSE 5000
+# 暴露端口（API服务）
+EXPOSE 8000
 
 # 运行应用
 CMD ["python", "app/main.py"]

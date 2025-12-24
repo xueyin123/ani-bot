@@ -4,9 +4,9 @@ import schedule
 from datetime import datetime
 from typing import Callable, Any
 import logging
-from app.models.anime import Anime, Episode
-from app.crawlers.base_crawler import BangumiCrawler
-from app.downloaders.bt_downloader import BTDownloadManager
+from ani_bot.models.anime import Anime, Episode
+from ani_bot.crawlers.base_crawler import BangumiCrawler
+from ani_bot.downloaders.bt_downloader import BTDownloadManager
 
 
 class TaskScheduler:
@@ -60,7 +60,7 @@ class TaskScheduler:
         
         try:
             # 从数据库获取所有需要跟踪的动漫
-            from app.models.anime import AnimeDatabase
+            from ani_bot.models.anime import AnimeDatabase
             db = AnimeDatabase(self.config.get('database.path', './data/anime.db'))
             animes = db.get_all_animes()
             
@@ -128,7 +128,7 @@ class TaskScheduler:
     
     def add_anime_to_track(self, anime: Anime):
         """添加动漫到跟踪列表"""
-        from app.models.anime import AnimeDatabase
+        from ani_bot.models.anime import AnimeDatabase
         db = AnimeDatabase(self.config.get('database.path', './data/anime.db'))
         
         # 检查动漫是否已存在
@@ -144,7 +144,7 @@ class TaskScheduler:
     
     def remove_anime_from_track(self, anime_id: int):
         """从跟踪列表移除动漫"""
-        from app.models.anime import AnimeDatabase
+        from ani_bot.models.anime import AnimeDatabase
         db = AnimeDatabase(self.config.get('database.path', './data/anime.db'))
         
         # 这里可以添加暂停相关下载任务的逻辑

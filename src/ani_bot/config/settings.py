@@ -6,7 +6,7 @@ from typing import Dict, Any
 class Config:
     """配置管理类"""
     
-    def __init__(self, config_path: str = "app/config/config.yaml"):
+    def __init__(self, config_path: str = "ani_bot/config/config.yaml"): 
         self.config_path = config_path
         self.config_data = self.load_config()
         

@@ -270,3 +270,17 @@ class AnimeDatabase:
             episodes.append(episode)
         
         return episodes
+    
+    def delete_anime(self, anime_id: int):
+        """根据ID删除动漫"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        # 先删除相关的剧集
+        cursor.execute('DELETE FROM episodes WHERE anime_id = ?', (anime_id,))
+        
+        # 再删除动漫本身
+        cursor.execute('DELETE FROM anime WHERE id = ?', (anime_id,))
+        
+        conn.commit()
+        conn.close()

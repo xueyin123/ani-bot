@@ -1,7 +1,7 @@
 import requests
 from abc import ABC, abstractmethod
 from typing import List, Dict, Optional
-from app.models.anime import Anime, Episode
+from ani_bot.models.anime import Anime, Episode
 import time
 import logging
 
