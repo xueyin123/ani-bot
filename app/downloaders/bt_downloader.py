@@ -58,14 +58,19 @@ class TransmissionDownloader(BTDownloader):
         try:
             import transmissionrpc
             self.tc = transmissionrpc.Client(
-                host=config.get('transmission.host', 'localhost'),
+                address=config.get('transmission.host', 'localhost'),
                 port=config.get('transmission.port', 9091),
-                username=config.get('transmission.username', ''),
+                user=config.get('transmission.username', ''),
                 password=config.get('transmission.password', '')
             )
+            # 测试连接
+            self.tc.session_stats()
         except ImportError:
             self.logger.error("需要安装 transmissionrpc: pip install transmissionrpc")
             raise
+        except Exception as e:
+            self.logger.warning(f"无法连接到Transmission客户端: {e}，BT下载功能将不可用")
+            self.tc = None
     
     def add_torrent(self, torrent_url: str, save_path: str = None) -> bool:
         """添加BT下载任务"""
@@ -170,6 +175,9 @@ class QBittorrentDownloader(BTDownloader):
         except ImportError:
             self.logger.error("需要安装 python-qbittorrent: pip install python-qbittorrent")
             raise
+        except Exception as e:
+            self.logger.warning(f"无法连接到qBittorrent客户端: {e}，BT下载功能将不可用")
+            self.qb = None
     
     def add_torrent(self, torrent_url: str, save_path: str = None) -> bool:
         """添加BT下载任务"""
@@ -261,9 +269,23 @@ class BTDownloadManager:
             self.downloader = QBittorrentDownloader(config)
         else:
             raise ValueError(f"不支持的BT客户端: {self.downloader_type}")
+        
+        # 检查下载器是否可用
+        if hasattr(self.downloader, 'tc') and self.downloader.tc is None:
+            self.logger.warning("Transmission客户端不可用，BT下载功能将被禁用")
+        elif hasattr(self.downloader, 'qb') and self.downloader.qb is None:
+            self.logger.warning("qBittorrent客户端不可用，BT下载功能将被禁用")
     
     def download_episode(self, episode: Episode) -> bool:
         """下载剧集"""
+        # 检查下载器是否可用
+        if hasattr(self.downloader, 'tc') and self.downloader.tc is None:
+            self.logger.warning("Transmission客户端不可用，跳过下载")
+            return False
+        elif hasattr(self.downloader, 'qb') and self.downloader.qb is None:
+            self.logger.warning("qBittorrent客户端不可用，跳过下载")
+            return False
+        
         if episode.download_url.startswith('magnet:'):
             return self.downloader.add_magnet(episode.download_url)
         else:
@@ -272,16 +294,48 @@ class BTDownloadManager:
     
     def get_download_status(self, episode_id: str) -> Dict[str, Any]:
         """获取剧集下载状态"""
+        # 检查下载器是否可用
+        if hasattr(self.downloader, 'tc') and self.downloader.tc is None:
+            self.logger.warning("Transmission客户端不可用，无法获取下载状态")
+            return {}
+        elif hasattr(self.downloader, 'qb') and self.downloader.qb is None:
+            self.logger.warning("qBittorrent客户端不可用，无法获取下载状态")
+            return {}
+        
         return self.downloader.get_download_status(episode_id)
     
     def pause_download(self, episode_id: str) -> bool:
         """暂停剧集下载"""
+        # 检查下载器是否可用
+        if hasattr(self.downloader, 'tc') and self.downloader.tc is None:
+            self.logger.warning("Transmission客户端不可用，无法暂停下载")
+            return False
+        elif hasattr(self.downloader, 'qb') and self.downloader.qb is None:
+            self.logger.warning("qBittorrent客户端不可用，无法暂停下载")
+            return False
+        
         return self.downloader.pause_download(episode_id)
     
     def resume_download(self, episode_id: str) -> bool:
         """恢复剧集下载"""
+        # 检查下载器是否可用
+        if hasattr(self.downloader, 'tc') and self.downloader.tc is None:
+            self.logger.warning("Transmission客户端不可用，无法恢复下载")
+            return False
+        elif hasattr(self.downloader, 'qb') and self.downloader.qb is None:
+            self.logger.warning("qBittorrent客户端不可用，无法恢复下载")
+            return False
+        
         return self.downloader.resume_download(episode_id)
     
     def remove_download(self, episode_id: str, delete_files: bool = False) -> bool:
         """移除剧集下载"""
+        # 检查下载器是否可用
+        if hasattr(self.downloader, 'tc') and self.downloader.tc is None:
+            self.logger.warning("Transmission客户端不可用，无法移除下载")
+            return False
+        elif hasattr(self.downloader, 'qb') and self.downloader.qb is None:
+            self.logger.warning("qBittorrent客户端不可用，无法移除下载")
+            return False
+        
         return self.downloader.remove_download(episode_id, delete_files)
