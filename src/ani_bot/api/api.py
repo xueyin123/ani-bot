@@ -9,7 +9,7 @@ import sqlite3
 # 添加项目根目录到Python路径
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from ani_bot.models.anime import AnimeDatabase, Anime
+from ani_bot.models import AnimeDatabase, Anime
 from ani_bot.config.settings import config
 from ani_bot.utils.logger import get_logger
 

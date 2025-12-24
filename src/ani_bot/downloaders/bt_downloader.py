@@ -3,7 +3,7 @@ import time
 import logging
 from typing import Optional, Dict, Any
 from abc import ABC, abstractmethod
-from ani_bot.models.anime import Episode
+from ani_bot.models import Episode
 
 
 class BTDownloader(ABC):

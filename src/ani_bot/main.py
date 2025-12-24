@@ -19,7 +19,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from ani_bot.config.settings import config
 from ani_bot.scheduler.task_scheduler import TaskScheduler
 from ani_bot.utils.logger import get_logger
-from ani_bot.models.anime import AnimeDatabase, Anime
+from ani_bot.models import AnimeDatabase, Anime
 
 
 class AniBot:
