@@ -42,7 +42,7 @@ class AniBot:
         self.stop()
         sys.exit(0)
     
-    def start(self, with_api: bool = False, api_host: str = "0.0.0.0", api_port: int = 8000):
+    def start(self, api_host: str = "0.0.0.0", api_port: int = 8000):
         """启动Ani-Bot"""
         self.logger.info("正在启动Ani-Bot...")
             
@@ -50,20 +50,8 @@ class AniBot:
         self.scheduler.start()
             
         # 如果需要，启动API服务
-        api_thread = None
-        if with_api:
-            api_thread = self.start_api_background(api_host, api_port)
+        self.start_api(api_host, api_port)
             
-        self.running = True
-        self.logger.info("Ani-Bot已启动并运行")
-            
-        # 保持主程序运行
-        try:
-            while self.running:
-                time.sleep(1)
-        except KeyboardInterrupt:
-            self.logger.info("接收到键盘中断，正在关闭Ani-Bot...")
-            self.stop()
         
     def start_api(self, host: str = "0.0.0.0", port: int = 8000):
         """启动API服务"""
@@ -72,19 +60,6 @@ class AniBot:
             
         self.logger.info(f"正在启动API服务，地址: {host}:{port}")
         uvicorn.run(app, host=host, port=port)
-        
-    def start_api_background(self, host: str = "0.0.0.0", port: int = 8000):
-        """在后台启动API服务"""
-        from ani_bot.api.api import app
-        import uvicorn
-            
-        def run_api():
-            self.logger.info(f"正在启动API服务，地址: {host}:{port}")
-            uvicorn.run(app, host=host, port=port)
-            
-        api_thread = threading.Thread(target=run_api, daemon=True)
-        api_thread.start()
-        return api_thread
         
     def stop(self):
         """停止Ani-Bot"""
@@ -122,7 +97,6 @@ def main():
     import argparse
     
     parser = argparse.ArgumentParser(description='Ani-Bot: 自动追番工具')
-    parser.add_argument('--api', action='store_true', help='启动API服务')
     parser.add_argument('--api-host', default='0.0.0.0', help='API服务主机地址')
     parser.add_argument('--api-port', type=int, default=8000, help='API服务端口')
     
@@ -130,12 +104,8 @@ def main():
     
     bot = AniBot()
     
-    # 示例：添加一些动漫到跟踪列表
-    # bot.add_anime("鬼灭之刃", "https://bgm.tv/subject/292185")
-    # bot.add_anime("我的英雄学院", "https://bgm.tv/subject/208912")
-    
     # 启动Ani-Bot
-    bot.start(with_api=args.api, api_host=args.api_host, api_port=args.api_port)
+    bot.start(api_host=args.api_host, api_port=args.api_port)
 
 
 if __name__ == "__main__":
