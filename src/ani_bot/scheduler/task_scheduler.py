@@ -6,7 +6,7 @@ from typing import Callable, Any
 import logging
 from ani_bot.models import Anime, Episode
 from ani_bot.crawlers.base_crawler import BangumiCrawler
-from ani_bot.downloaders.bt_downloader import BTDownloadManager
+from ani_bot.downloader.bt_downloader import BTDownloadManager
 
 
 class TaskScheduler:
