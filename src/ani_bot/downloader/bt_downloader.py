@@ -4,6 +4,7 @@ import logging
 from typing import Optional, Dict, Any
 from abc import ABC, abstractmethod
 from ani_bot.models import Episode
+from qbittorrent import Client
 
 
 class BTDownloader(ABC):
@@ -164,7 +165,7 @@ class QBittorrentDownloader(BTDownloader):
     def __init__(self, config):
         super().__init__(config)
         try:
-            from qbittorrent import Client
+            
             self.qb = Client(
                 f"http://{config.get('qbittorrent.host', 'localhost')}:{config.get('qbittorrent.port', 8080)}/"
             )
