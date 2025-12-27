@@ -1,10 +1,15 @@
 from datetime import datetime
 from typing import List, Optional
-import sqlite3
+from sqlmodel import Session
 from .anime_models import Anime, Episode
 from .rss_models import RSSFeed, RSSItem
 from .torrent_models import Torrent
 
+
+class RSSDatabase:
+    """RSS数据库管理类"""
+    def __init__(self, session: Session):
+        self.session = session
 
 class AnimeDatabase:
     """动漫数据库管理类"""
