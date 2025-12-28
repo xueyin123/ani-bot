@@ -1,41 +1,22 @@
-from fastapi import APIRouter
+from typing import Any
+from fastapi import APIRouter, Depends
+from ani_bot.api.deps import SessionDep
+from ani_bot.db.models import RSSItem
 
 router = APIRouter(prefix="/rss", tags=["rss"])
 
 
 
 @router.get(
-    path="", response_model=list[RSSItem]
+    path="",
+    dependencies=[Depends(SessionDep)],
+    response_model=list[RSSItem]
 )
-def get_rss():
-    with RSSEngine() as engine:
-        return engine.rss.search_all()
+def get_rss(session: SessionDep, skip: int = 0, limit: int = 100) -> Any:
+    count_statement = select(func.count()).select_from(RSSItem)
+    count = session.exec(count_statement).one()
 
-@router.get(
-    path="/{rss_id}", response_model=RSSItem
-)
-def get_rss_item(rss_id: int):
-    with RSSEngine() as engine:
-        return engine.rss.search_by_id(rss_id)
+    statement = select(RSSItem).offset(skip).limit(limit)
+    rssItems = session.exec(statement).all()
 
-@router.post(
-    path="/add", response_model=RSSItem
-)
-def add_rss_item(rss_item: RSSItem):
-    with RSSEngine() as engine:
-        return engine.rss.add(rss_item)
-
-@router.delete(
-    path="/{rss_id}", response_model=RSSItem
-)
-def delete_rss_item(rss_id: int):
-    with RSSEngine() as engine:
-        return engine.rss.delete(rss_id)
-
-@router.put(
-    path="/{rss_id}", response_model=RSSItem
-)
-def update_rss_item(rss_id: int, rss_item: RSSItem):
-    with RSSEngine() as engine:
-        return engine.rss.update(rss_id, rss_item)
-
+    return RSSItemPublic(data=rssItems, count=count)

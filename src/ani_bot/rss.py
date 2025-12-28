@@ -1,6 +1,5 @@
 import requests
 import xml.etree.ElementTree as ET
-from hmac import new
 from ani_bot.downloader.bt_downloader import QBittorrentDownloader
 
 
