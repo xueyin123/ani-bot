@@ -33,10 +33,16 @@ if settings.all_cors_origins:
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
 
-import uvicorn
-
-uvicorn.run(
-        app,
+# 创建一个启动函数，而不是直接运行
+def start_server():
+    import uvicorn
+    uvicorn.run(
+        "ani_bot.main:app",
         host="0.0.0.0",
-        port=8080
+        port=settings.API_PORT,
+        reload=True  # 开发模式下启用热重载
     )
+
+
+if __name__ == "__main__":
+    start_server()

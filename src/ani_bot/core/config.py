@@ -21,6 +21,7 @@ def parse_cors(v: Any) -> list[str] | str:
 class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     PROJECT_NAME: str = "Ani-Bot"
+    API_PORT: int = 8080
     SENTRY_DSN: HttpUrl | None = None
     ENVIRONMENT: Literal["local", "staging", "production"] = "local"
 
@@ -36,5 +37,10 @@ class Settings(BaseSettings):
         return [str(origin).rstrip("/") for origin in self.BACKEND_CORS_ORIGINS] + [
             self.FRONTEND_HOST
         ]
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def API_BASE_URL(self) -> str:
+        return f"http://localhost:{self.API_PORT}{self.API_V1_STR}"
 
 settings = Settings()

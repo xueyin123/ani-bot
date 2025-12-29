@@ -9,5 +9,5 @@ def get_db() -> Generator[Session, None, None]:
     with Session(engine) as session:
         yield session
 
-
+# 正确定义类型别名
 SessionDep = Annotated[Session, Depends(get_db)]
