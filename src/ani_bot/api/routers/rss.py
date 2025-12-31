@@ -4,7 +4,8 @@ from sqlmodel import select, func
 from ani_bot.api.deps import SessionDep
 from ani_bot.db.models import RSSItem, RSSItemPublic
 from ani_bot.db import crud
-from datetime import datetime
+from ani_bot.rss import rss
+from datetime import datetime, timezone
 
 router = APIRouter(prefix="/rss", tags=["rss"])
 
@@ -27,11 +28,14 @@ def get_rss(session: SessionDep, skip: int = 0, limit: int = 100) -> Any:
 )
 def create_rss(session: SessionDep, rss_item: RSSItem) -> Any:
     # 设置默认时间戳
-    if not rss_item.created_at:
-        rss_item.created_at = datetime.utcnow()
+   if not rss_item.created_at:
+    rss_item.created_at = datetime.now(timezone.utc)
     if not rss_item.updated_at:
-        rss_item.updated_at = datetime.utcnow()
-    return crud.create_rss_item(session, rss_item)
+        rss_item.updated_at = datetime.now(timezone.utc)
+
+    db_item = crud.create_rss_item(session, rss_item)
+    # rss.add_rss(rss_item)
+    return db_item
 
 @router.get(
     path="/{rss_id}",
