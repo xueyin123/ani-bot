@@ -20,7 +20,8 @@ async def fetch_rss_feed(session, url):
 async def fetch_all_rss(urls):
     """
     下载rss源
-    
+    TODO: 限流处理
+    TODO: 错误重试
     :param urls: rss源列表
     """
     async with aiohttp.ClientSession() as session:
@@ -52,6 +53,10 @@ def parse_torrent(data: str):
             
 
 class RSSTask:
+    """
+    TODO: 解析好后需要添加到数据库,分为RSS解析任务和 rss下载任务
+    """
+
     def __init__(self,
                  get_rss_sources: Callable[[], Awaitable[List[str]]],
                  downloader: BTDownloader
