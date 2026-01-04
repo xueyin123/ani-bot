@@ -29,7 +29,7 @@ async def fetch_all_rss(urls):
         results = await asyncio.gather(*tasks)
         return [r for r in results if r is not None]  # 过滤失败的
 
-def parse_torrent(data: str):
+def parse_torrent(data: str) -> List[str]:
         """
         mikan 的rss解析
         TODO: 支持更多rss源
@@ -38,16 +38,22 @@ def parse_torrent(data: str):
 
         root = ET.fromstring(data)
         channel = root.find('channel')
+        if channel is None:
+            raise ValueError("Invalid RSS: no <channel> found")
+        
         title = channel.find('title')
+        title_text = title.text if title is not None else ""
         description = channel.find('description')
-        print(f"Title: {title.text}")
-        print(f"Description: {description.text}")
+        description_text = description.text if description is not None else ""
+        print(f"Title: {title_text}")
+        print(f"Description: {description_text}")
 
         for item in channel.findall('item'):
             title = item.find('title')
-            print(f"Title: {title.text}")
+            title_text = title.text if title is not None else ""
+            print(f"Title: {title_text}")
             enclosure = item.find('enclosure')
-            url = enclosure.attrib['url']
+            url = enclosure.attrib['url'] if enclosure is not None else ""
             torrent_list.append(url)
         return torrent_list
             
