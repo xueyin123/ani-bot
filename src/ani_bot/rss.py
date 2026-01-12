@@ -58,9 +58,11 @@ def parse_torrent(data: str) -> List[str]:
         return torrent_list
             
 
-class RSSTask:
+class RSSParseTask:
     """
-    TODO: 解析好后需要添加到数据库,分为RSS解析任务和 rss下载任务
+    rss解析任务
+    TODO: 解析ani元数据、解析torrent文件
+    TODO: 将解析添加到数据库,分为RSS解析任务和 rss下载任务
     """
 
     def __init__(self,
