@@ -2,7 +2,7 @@ import asyncio
 from typing import Awaitable, Callable, List
 import aiohttp
 import xml.etree.ElementTree as ET
-from ani_bot.downloader.bt_downloader import BTDownloader, QBittorrentDownloader
+from ani_bot.downloader.bt_downloader import BTDownloader
 
 
 async def fetch_rss_feed(session, url):
