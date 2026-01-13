@@ -7,7 +7,11 @@ from qbittorrent import Client
 
 
 class BTDownloader(ABC):
-    """BT下载器抽象基类"""
+    """、
+    BT下载器抽象基类
+    TODO: 实现qBittorrent下载器
+    TODO: 实现Transmission下载器
+    """
     
     def __init__(self, config):
         self.config = config
