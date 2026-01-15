@@ -1,5 +1,5 @@
 import asyncio
-from typing import Awaitable, Callable, List
+from typing import Awaitable, Callable, List, Tuple
 import aiohttp
 import xml.etree.ElementTree as ET
 from ani_bot.downloader.bt_downloader import BTDownloader
@@ -29,34 +29,40 @@ async def fetch_all_rss(urls):
         results = await asyncio.gather(*tasks)
         return [r for r in results if r is not None]  # 过滤失败的
 
-def parse_torrent(data: str) -> List[str]:
-        """
-        mikan 的rss解析
-        TODO: 支持更多rss源
-        """
-        torrent_list = []
+def parse_torrent(data: str) -> Tuple[List[str], List[str], List[str]]:
+    """
+    mikan 的rss解析
+    TODO: 支持更多rss源
+    """
+    torrent_list = []
+    anime_list = []
+    episode_list = []
 
-        root = ET.fromstring(data)
-        channel = root.find('channel')
-        if channel is None:
-            raise ValueError("Invalid RSS: no <channel> found")
-        
-        title = channel.find('title')
-        title_text = title.text if title is not None else ""
-        description = channel.find('description')
-        description_text = description.text if description is not None else ""
-        print(f"Title: {title_text}")
-        print(f"Description: {description_text}")
+    root = ET.fromstring(data)
+    channel = root.find('channel')
+    if channel is None:
+        raise ValueError("Invalid RSS: no <channel> found")
+    
+    anime_title = channel.find('title')
+    anime_title_text = anime_title.text if anime_title is not None else ""
+    anime_description = channel.find('description')
+    anime_description_text = anime_description.text if anime_description is not None else ""
+    print(f"Title: {anime_title_text}")
+    print(f"Description: {anime_description_text}")
 
-        for item in channel.findall('item'):
-            title = item.find('title')
-            title_text = title.text if title is not None else ""
-            print(f"Title: {title_text}")
-            enclosure = item.find('enclosure')
-            url = enclosure.attrib['url'] if enclosure is not None else ""
-            torrent_list.append(url)
-        return torrent_list
-            
+    for item in channel.findall('item'):
+        episode_title = item.find('title')
+        episode_title_text = episode_title.text if episode_title is not None else ""
+        episode_description = item.find('description')
+        episode_description_text = episode_description.text if episode_description is not None else ""
+        print(f"Title: {episode_title_text}")
+        enclosure = item.find('enclosure')
+        url = enclosure.attrib['url'] if enclosure is not None else ""
+        torrent_list.append(url)
+
+    return torrent_list, anime_list, episode_list
+
+
 
 class RSSParseTask:
     """
