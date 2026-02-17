@@ -1,12 +1,13 @@
 from dataclasses import dataclass
 from datetime import datetime
 from typing import List, Optional
+import uuid
 from sqlmodel import Field, Relationship, SQLModel
 from pydantic import BaseModel
 
 class Anime(SQLModel, table=True):
     """动漫数据模型"""
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     name: str = Field(default="")
     original_name: str = Field(default="")
     season: int = Field(default=1)
@@ -22,7 +23,7 @@ class Anime(SQLModel, table=True):
 
 class Episode(SQLModel, table=True):
     """剧集数据模型"""
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     anime_id: int = Field(default=0)
     episode_number: int = Field(default=0)
     title: str = Field(default="")
@@ -35,7 +36,7 @@ class Episode(SQLModel, table=True):
 
 class RSSFeed(SQLModel, table=True):
     """RSS订阅源数据模型"""
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     name: str = Field(default="")  # 订源名称
     url: str = Field(default="")  # RSS源URL
     site_url: str = Field(default="")  # 对应网站URL
@@ -47,7 +48,7 @@ class RSSFeed(SQLModel, table=True):
 
 class Torrent(SQLModel, table=True):
     """种子数据模型"""
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     title: str = Field(default="")  # 种子标题
     size: int = Field(default=0)  # 文件大小，字节
     magnet_link: str = Field(default="")  # 磁力链接
