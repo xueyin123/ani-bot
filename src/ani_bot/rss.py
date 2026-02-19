@@ -79,7 +79,7 @@ class RSSParseTask:
         self.get_rss_sources = get_rss_sources
         self.downloader = downloader
 
-    async def execute(self):
+    async def run(self):
         rss_urls = await self.get_rss_sources()
         if not rss_urls:
             return

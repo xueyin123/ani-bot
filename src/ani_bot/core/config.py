@@ -43,4 +43,13 @@ class Settings(BaseSettings):
     def API_BASE_URL(self) -> str:
         return f"http://localhost:{self.API_PORT}{self.API_V1_STR}"
 
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def qbittorrent_config(self) -> dict:
+        return {
+            "url": "http://localhost:8080",
+            "username": "admin",
+            "password": "adminadmin",
+        }
+
 settings = Settings()

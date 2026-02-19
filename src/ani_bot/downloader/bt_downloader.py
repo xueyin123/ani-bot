@@ -53,3 +53,28 @@ class BTDownloader(ABC):
         """移除下载任务"""
         pass
 
+class QBittorrentDownloader(BTDownloader):
+    def __init__(self, config):
+        super().__init__(config)
+        pass
+
+    async def add_torrent(self, torrent_url: str, save_path: str = None) -> bool:
+        pass
+
+    def add_magnet(self, magnet_link: str, save_path: str = None) -> bool:
+        pass
+
+    def get_download_status(self, torrent_id: str) -> Dict[str, Any]:
+        pass
+
+    def pause_download(self, torrent_id: str) -> bool:
+        pass
+
+    def resume_download(self, torrent_id: str) -> bool:
+        pass
+
+    def remove_download(self, torrent_id: str, delete_files: bool = False) -> bool:
+        pass
+
+    
+        
