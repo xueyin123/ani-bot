@@ -2,6 +2,7 @@ import asyncio
 from typing import Awaitable, Callable, List, Tuple
 import aiohttp
 import xml.etree.ElementTree as ET
+from ani_bot.db.models import Anime, Episode, Torrent
 from ani_bot.downloader.bt_downloader import BTDownloader
 
 
@@ -26,16 +27,22 @@ async def fetch_all_rss(urls):
     """
     async with aiohttp.ClientSession() as session:
         tasks = [fetch_rss_feed(session, url) for url in urls]
-        results = await asyncio.gather(*tasks)
-        return [r for r in results if r is not None]  # 过滤失败的
+        
+        for task in asyncio.as_completed(tasks):
+            try:
+                result = await task
+                if result is not None:
+                    yield result  # 完成一个立即产出
+            except Exception as e:
+                print(f"任务失败: {e}")
+                continue
 
-def parse_torrent(data: str) -> Tuple[List[str], List[str], List[str]]:
+def parse_torrent(data: str) -> Tuple[Anime, List[Episode], List[Torrent]]:
     """
     mikan 的rss解析
     TODO: 支持更多rss源
     """
     torrent_list = []
-    anime_list = []
     episode_list = []
 
     root = ET.fromstring(data)
@@ -44,23 +51,25 @@ def parse_torrent(data: str) -> Tuple[List[str], List[str], List[str]]:
         raise ValueError("Invalid RSS: no <channel> found")
     
     anime_title = channel.find('title')
-    anime_title_text = anime_title.text if anime_title is not None else ""
+    anime_title_text = (anime_title.text if anime_title is not None else "") or ""
     anime_description = channel.find('description')
-    anime_description_text = anime_description.text if anime_description is not None else ""
-    print(f"Title: {anime_title_text}")
-    print(f"Description: {anime_description_text}")
+    anime_description_text = (anime_description.text if anime_description is not None else "") or ""
+
+    anime = Anime(original_title=anime_title_text, description=anime_description_text)
 
     for item in channel.findall('item'):
         episode_title = item.find('title')
-        episode_title_text = episode_title.text if episode_title is not None else ""
-        episode_description = item.find('description')
-        episode_description_text = episode_description.text if episode_description is not None else ""
-        print(f"Title: {episode_title_text}")
+        episode_title_text = (episode_title.text if episode_title is not None else "") or ""
+        episode = Episode(original_title=episode_title_text)
+        episode_list.append(episode)
+    
         enclosure = item.find('enclosure')
         url = enclosure.attrib['url'] if enclosure is not None else ""
-        torrent_list.append(url)
+        
+        torrent = Torrent(torrent_url=url)
+        torrent_list.append(torrent)
 
-    return torrent_list, anime_list, episode_list
+    return anime, episode_list, torrent_list
 
 
 
@@ -73,26 +82,22 @@ class RSSParseTask:
 
     def __init__(self,
                  get_rss_sources: Callable[[], Awaitable[List[str]]],
-                 downloader: BTDownloader
+                 save_parse_result: Callable[[Anime, List[Episode], List[Torrent]], Awaitable[None]]
         ):
 
         self.get_rss_sources = get_rss_sources
-        self.downloader = downloader
+        self.save_parse_result = save_parse_result  
 
     async def run(self):
         rss_urls = await self.get_rss_sources()
         if not rss_urls:
             return
 
-        rss_contents = await fetch_all_rss(rss_urls)
-        
-        all_torrents = []
-        for rss in rss_contents:
-            torrents = parse_torrent(rss)
-            all_torrents.extend(torrents)
-
-        if not all_torrents:
-            return
-        
-        tasks = [self.downloader.add_torrent(torrent) for torrent in all_torrents]
-        await asyncio.gather(*tasks)
+        async for result in fetch_all_rss(rss_urls):
+            if result is not None:
+                try:
+                    anime, episode_list, torrent_list = parse_torrent(result)
+                    await self.save_parse_result(anime, episode_list, torrent_list)
+                except Exception as e:
+                    print(f"解析失败: {e}")
+                    continue

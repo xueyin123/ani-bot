@@ -47,4 +47,42 @@ async def get_all_rss_feed_urls() -> List[str]:
     """获取所有RSS源的URL列表"""
     with session_scope() as db_session:
         statement = select(RSSFeed.url)
-        return [row[0] for row in db_session.exec(statement).all()]
+        return [row for row in db_session.exec(statement).all()]
+    
+async def save_parsed_rss_result(anime: Anime, episodes: List[Episode], torrents: List[Torrent]) -> None:
+    """保存解析结果到数据库"""
+    with session_scope() as db_session:
+        select_anime = select(Anime).where(Anime.original_title == anime.original_title)
+        existing_anime = db_session.exec(select_anime).first()
+        if existing_anime:
+            anime.id = existing_anime.id  # 使用现有动漫ID
+        else:
+            db_session.add(anime)
+        
+        for i, episode in enumerate(episodes):
+            select_episode = select(Episode).where(
+                Episode.anime_id == anime.id,
+                Episode.episode_number == episode.episode_number
+            )
+            existing_episode = db_session.exec(select_episode).first()
+            if existing_episode:
+                episode.id = existing_episode.id  # 使用现有剧集ID
+            else:
+                episode.anime_id = anime.id
+                db_session.add(episode)
+
+
+            torrent = torrents[i]
+
+            select_torrent = select(Torrent).where(
+                Torrent.torrent_url == torrent.torrent_url
+            )
+            existing_torrent = db_session.exec(select_torrent).first()
+            if existing_torrent:
+                torrent.id = existing_torrent.id  # 使用现有种子ID
+            else:
+                torrent.anime_id = anime.id
+                torrent.episode_id = episode.id
+                db_session.add(torrent)
+        
+        db_session.commit()

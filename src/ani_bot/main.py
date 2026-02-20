@@ -33,7 +33,7 @@ scheduler = AsyncScheduler()
 
 rss_parse_task = RSSParseTask(
     get_rss_sources=crud.get_all_rss_feed_urls,
-    downloader=QBittorrentDownloader(settings.qbittorrent_config)  # 传入配置
+    save_parse_result=crud.save_parsed_rss_result
 )
 
 @asynccontextmanager
