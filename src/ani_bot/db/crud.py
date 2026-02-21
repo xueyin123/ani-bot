@@ -51,38 +51,85 @@ async def get_all_rss_feed_urls() -> List[str]:
     
 async def save_parsed_rss_result(anime: Anime, episodes: List[Episode], torrents: List[Torrent]) -> None:
     """保存解析结果到数据库"""
-    with session_scope() as db_session:
-        select_anime = select(Anime).where(Anime.original_title == anime.original_title)
-        existing_anime = db_session.exec(select_anime).first()
-        if existing_anime:
-            anime.id = existing_anime.id  # 使用现有动漫ID
-        else:
-            db_session.add(anime)
-        
-        for i, episode in enumerate(episodes):
-            select_episode = select(Episode).where(
-                Episode.anime_id == anime.id,
-                Episode.episode_number == episode.episode_number
-            )
-            existing_episode = db_session.exec(select_episode).first()
-            if existing_episode:
-                episode.id = existing_episode.id  # 使用现有剧集ID
+    if not anime:
+        raise ValueError("Anime object cannot be None")
+    
+    if len(episodes) != len(torrents):
+        raise ValueError("Episodes and torrents lists must have the same length")
+    
+    try:
+        with session_scope() as db_session:
+            # 查找或创建动漫
+            select_anime = select(Anime).where(Anime.original_title == anime.original_title)
+            existing_anime = db_session.exec(select_anime).first()
+            
+            if existing_anime:
+                # 更新现有动漫的字段
+                existing_anime.title = anime.title
+                existing_anime.original_title = anime.original_title
+                existing_anime.air_date = anime.air_date
+                existing_anime.status = anime.status
+                existing_anime.description = anime.description
+                existing_anime.download_status = anime.download_status
+                existing_anime.download_path = anime.download_path
+                existing_anime.season = anime.season
+                existing_anime.total_episodes = anime.total_episodes
+                existing_anime.last_updated = anime.last_updated
+                existing_anime.next_air_date = anime.next_air_date
+                anime = existing_anime
             else:
-                episode.anime_id = anime.id
-                db_session.add(episode)
-
-
-            torrent = torrents[i]
-
-            select_torrent = select(Torrent).where(
-                Torrent.torrent_url == torrent.torrent_url
-            )
-            existing_torrent = db_session.exec(select_torrent).first()
-            if existing_torrent:
-                torrent.id = existing_torrent.id  # 使用现有种子ID
-            else:
-                torrent.anime_id = anime.id
-                torrent.episode_id = episode.id
-                db_session.add(torrent)
-        
-        db_session.commit()
+                db_session.add(anime)
+                db_session.flush()  # 获取ID但不提交事务
+            
+            for episode, torrent in zip(episodes, torrents):
+                # 查找或创建剧集
+                select_episode = select(Episode).where(
+                    Episode.anime_id == anime.id,
+                    Episode.episode_number == episode.episode_number
+                )
+                existing_episode = db_session.exec(select_episode).first()
+                
+                if existing_episode:
+                    # 更新现有剧集的字段
+                    existing_episode.title = episode.title
+                    existing_episode.original_title = episode.original_title
+                    existing_episode.air_date = episode.air_date
+                    existing_episode.download_url = episode.download_url
+                    existing_episode.download_status = episode.download_status
+                    existing_episode.download_path = episode.download_path
+                    existing_episode.quality = episode.quality
+                    episode = existing_episode
+                else:
+                    episode.anime_id = anime.id
+                    db_session.add(episode)
+                    db_session.flush()  # 获取ID但不提交事务
+                
+                # 查找或创建种子
+                select_torrent = select(Torrent).where(
+                    Torrent.torrent_url == torrent.torrent_url
+                )
+                existing_torrent = db_session.exec(select_torrent).first()
+                
+                if existing_torrent:
+                    # 更新现有种子的字段
+                    existing_torrent.title = torrent.title
+                    existing_torrent.size = torrent.size
+                    existing_torrent.magnet_link = torrent.magnet_link
+                    existing_torrent.torrent_hash = torrent.torrent_hash
+                    existing_torrent.category = torrent.category
+                    existing_torrent.quality = torrent.quality
+                    existing_torrent.source = torrent.source
+                    existing_torrent.download_status = torrent.download_status
+                    existing_torrent.download_path = torrent.download_path
+                    existing_torrent.anime_id = anime.id
+                    existing_torrent.episode_id = episode.id
+                    existing_torrent.created_at = torrent.created_at
+                    existing_torrent.updated_at = torrent.updated_at
+                else:
+                    torrent.anime_id = anime.id
+                    torrent.episode_id = episode.id
+                    db_session.add(torrent)
+            
+            db_session.commit()
+    except Exception as e:
+        raise RuntimeError(f"Failed to save parsed RSS result: {str(e)}")

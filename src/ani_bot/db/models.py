@@ -24,7 +24,7 @@ class Anime(SQLModel, table=True):
 class Episode(SQLModel, table=True):
     """剧集数据模型"""
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    anime_id: uuid.UUID = Field(default_factory=uuid.uuid4, foreign_key="anime.id")
+    anime_id: uuid.UUID = Field(default_factory=uuid.uuid4)
     episode_number: int = Field(default=0)
     title: str = Field(default="")
     original_title: str = Field(default="")
@@ -60,7 +60,7 @@ class Torrent(SQLModel, table=True):
     source: str = Field(default="")  # 来源
     download_status: str = Field(default="pending")  # 下载状态: pending, downloading, completed, failed
     download_path: str = Field(default="")  # 下载路径
-    anime_id: Optional[uuid.UUID] = Field(default=None, foreign_key="anime.id")  # 关联的动漫ID
-    episode_id: Optional[uuid.UUID] = Field(default=None, foreign_key="episode.id")  # 关联的剧集ID
+    anime_id: Optional[uuid.UUID] = Field(default=None)  # 关联的动漫ID
+    episode_id: Optional[uuid.UUID] = Field(default=None)  # 关联的剧集ID
     created_at: Optional[datetime] = Field(default=None)  # 创建时间
     updated_at: Optional[datetime] = Field(default=None)  # 更新时间
