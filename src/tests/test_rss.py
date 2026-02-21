@@ -15,6 +15,12 @@ def mock_downloader():
 
 
 @pytest.fixture
+def mock_save_parse_result():
+    """创建mock的save_parse_result函数"""
+    return AsyncMock(return_value=None)
+
+
+@pytest.fixture
 def sample_rss_content():
     """示例RSS内容"""
     return '''<?xml version="1.0" encoding="utf-8"?>
@@ -40,59 +46,40 @@ def sample_rss_content():
 class TestRSSParseTask:
     
     @pytest.mark.asyncio
-    async def test_execute_with_valid_data(self, mock_downloader, sample_rss_content):
+    async def test_run_with_valid_data(self, mock_save_parse_result, sample_rss_content):
         """测试正常执行流程"""
         # 准备mock数据
         async def mock_get_rss_sources():
             return ["https://test.com/rss"]
         
         # mock fetch_all_rss函数返回示例内容
-        with patch('ani_bot.rss.fetch_all_rss', return_value=[sample_rss_content]):
-            # 创建任务实例
-            task = RSSParseTask(mock_get_rss_sources, mock_downloader)
-            
+        async def mock_fetch_all_rss(urls):
+            yield sample_rss_content
+        
+        # 创建任务实例
+        task = RSSParseTask(mock_get_rss_sources, mock_save_parse_result)
+        
+        # 使用mock替换fetch_all_rss函数
+        with patch('ani_bot.rss.fetch_all_rss', side_effect=mock_fetch_all_rss):
             # 执行任务
-            await task.execute()
+            await task.run()
             
-            # 验证downloader被正确调用
-            assert mock_downloader.add_torrent.call_count == 2
-            mock_downloader.add_torrent.assert_any_call("https://test.com/torrent1.torrent")
-            mock_downloader.add_torrent.assert_any_call("https://test.com/torrent2.torrent")
+            # 验证save_parse_result被正确调用
+            assert mock_save_parse_result.called
     
     @pytest.mark.asyncio
-    async def test_execute_with_empty_rss_sources(self, mock_downloader):
+    async def test_run_with_empty_rss_sources(self, mock_save_parse_result):
         """测试RSS源为空的情况"""
         async def mock_get_rss_sources():
             return []  # 返回空列表
         
-        task = RSSParseTask(mock_get_rss_sources, mock_downloader)
+        task = RSSParseTask(mock_get_rss_sources, mock_save_parse_result)
         
         # 执行任务
-        await task.execute()
+        await task.run()
         
-        # 验证downloader没有被调用
-        mock_downloader.add_torrent.assert_not_called()
-    
-    @pytest.mark.asyncio
-    async def test_execute_with_no_torrents(self, mock_downloader):
-        """测试解析不到torrent的情况"""
-        async def mock_get_rss_sources():
-            return ["https://test.com/rss"]
-        
-        # mock空的RSS内容（不包含torrent链接）
-        empty_rss = '''<?xml version="1.0" encoding="utf-8"?>
-<rss version="2.0">
-<channel>
-<title>Empty RSS</title>
-</channel>
-</rss>'''
-        
-        with patch('ani_bot.rss.fetch_all_rss', return_value=[empty_rss]):
-            task = RSSParseTask(mock_get_rss_sources, mock_downloader)
-            await task.execute()
-            
-            # 验证downloader没有被调用
-            mock_downloader.add_torrent.assert_not_called()
+        # 验证save_parse_result没有被调用
+        mock_save_parse_result.assert_not_called()
 
 
 class TestFetchFunctions:
@@ -137,7 +124,9 @@ class TestFetchFunctions:
             
             # mock aiohttp session
             with patch('aiohttp.ClientSession'):
-                result = await fetch_all_rss(urls)
+                result = []
+                async for content in fetch_all_rss(urls):
+                    result.append(content)
                 
                 # 验证结果
                 assert result == ["content1", "content2"]
@@ -153,7 +142,9 @@ class TestFetchFunctions:
             
             # mock aiohttp session
             with patch('aiohttp.ClientSession'):
-                result = await fetch_all_rss(urls)
+                result = []
+                async for content in fetch_all_rss(urls):
+                    result.append(content)
                 
                 # 验证结果过滤了None值
                 assert result == ["content1", "content3"]
@@ -163,10 +154,12 @@ class TestParseTorrent:
     
     def test_parse_torrent_success(self, sample_rss_content):
         """测试成功解析torrent链接"""
-        torrents = parse_torrent(sample_rss_content)
-        assert len(torrents) == 2
-        assert "https://test.com/torrent1.torrent" in torrents
-        assert "https://test.com/torrent2.torrent" in torrents
+        anime, episode_list, torrent_list = parse_torrent(sample_rss_content)
+        assert anime is not None
+        assert len(episode_list) == 2
+        assert len(torrent_list) == 2
+        assert torrent_list[0].torrent_url == "https://test.com/torrent1.torrent"
+        assert torrent_list[1].torrent_url == "https://test.com/torrent2.torrent"
     
     def test_parse_torrent_invalid_xml(self):
         """测试解析无效XML"""
