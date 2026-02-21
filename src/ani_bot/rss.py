@@ -38,10 +38,26 @@ async def fetch_all_rss(urls):
                 print(f"任务失败: {e}")
                 continue
 
-def parse_torrent(data: str) -> Tuple[Anime, List[Episode], List[Torrent]]:
+# 解析器注册表
+_parsers = {}
+
+def register_parser(rss_type: str):
     """
-    mikan 的rss解析
-    TODO: 支持更多rss源
+    注册 RSS 解析器的装饰器
+    
+    Args:
+        rss_type: RSS 源类型
+    """
+    def decorator(func):
+        _parsers[rss_type] = func
+        return func
+    return decorator
+
+
+@register_parser('mikan')
+def parse_mikan_rss(data: str) -> Tuple[Anime, List[Episode], List[Torrent]]:
+    """
+    Mikan 网站的 RSS 解析
     """
     torrent_list = []
     episode_list = []
@@ -111,6 +127,41 @@ def parse_torrent(data: str) -> Tuple[Anime, List[Episode], List[Torrent]]:
         torrent_list.append(torrent)
 
     return anime, episode_list, torrent_list
+
+
+def parse_torrent(data: str, rss_type: str = 'mikan') -> Tuple[Anime, List[Episode], List[Torrent]]:
+    """
+    RSS 解析函数，根据类型选择不同的解析器
+    
+    Args:
+        data: RSS 数据
+        rss_type: RSS 源类型，默认为 'mikan'
+    
+    Returns:
+        Tuple[Anime, List[Episode], List[Torrent]]: 解析结果
+    
+    Raises:
+        ValueError: 如果指定的 RSS 类型没有对应的解析器
+    """
+    if rss_type not in _parsers:
+        raise ValueError(f"Unsupported RSS type: {rss_type}")
+    
+    return _parsers[rss_type](data)
+
+
+# 示例：如何添加新的解析器
+# @register_parser('other_rss_source')
+# def parse_other_rss(data: str) -> Tuple[Anime, List[Episode], List[Torrent]]:
+#     """
+#     其他 RSS 源的解析
+#     """
+#     torrent_list = []
+#     episode_list = []
+#     
+#     # 解析逻辑
+#     # ...
+#     
+#     return anime, episode_list, torrent_list
 
 
 
