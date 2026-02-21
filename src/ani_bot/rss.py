@@ -1,4 +1,5 @@
 import asyncio
+from datetime import datetime
 from typing import Awaitable, Callable, List, Tuple
 import aiohttp
 import xml.etree.ElementTree as ET
@@ -57,16 +58,56 @@ def parse_torrent(data: str) -> Tuple[Anime, List[Episode], List[Torrent]]:
 
     anime = Anime(original_title=anime_title_text, description=anime_description_text)
 
+    # 定义命名空间
+    namespaces = {'torrent': 'https://mikanime.tv/0.1/'}
+
     for item in channel.findall('item'):
         episode_title = item.find('title')
         episode_title_text = (episode_title.text if episode_title is not None else "") or ""
         episode = Episode(original_title=episode_title_text)
         episode_list.append(episode)
     
-        enclosure = item.find('enclosure')
-        url = enclosure.attrib['url'] if enclosure is not None else ""
+        # 从 <torrent> 标签中获取信息
+        torrent_elem = item.find('torrent:torrent', namespaces)
+        torrent_url = ""
+        size = 0
+        publish_date = None
         
-        torrent = Torrent(torrent_url=url)
+        if torrent_elem is not None:
+            # 获取 torrent 链接
+            torrent_link = torrent_elem.find('torrent:link', namespaces)
+            if torrent_link is not None and torrent_link.text:
+                torrent_url = torrent_link.text
+        
+        # 如果 <torrent> 中没有链接，回退到 <enclosure> 中的链接
+        if not torrent_url:
+            enclosure = item.find('enclosure')
+            if enclosure is not None and 'url' in enclosure.attrib:
+                torrent_url = enclosure.attrib['url']
+        
+        # 解析 contentLength
+        if torrent_elem is not None:
+            content_length = torrent_elem.find('torrent:contentLength', namespaces)
+            if content_length is not None and content_length.text:
+                try:
+                    size = int(content_length.text)
+                except ValueError:
+                    pass
+        
+        # 解析 pubDate
+        if torrent_elem is not None:
+            pub_date = torrent_elem.find('torrent:pubDate', namespaces)
+            if pub_date is not None and pub_date.text:
+                try:
+                    publish_date = datetime.fromisoformat(pub_date.text)
+                except ValueError:
+                    pass
+        
+        torrent = Torrent(
+            torrent_url=torrent_url,
+            size=size,
+            publish_date=publish_date
+        )
         torrent_list.append(torrent)
 
     return anime, episode_list, torrent_list

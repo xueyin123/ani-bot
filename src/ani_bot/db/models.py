@@ -52,6 +52,7 @@ class Torrent(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     title: str = Field(default="")  # 种子标题
     size: int = Field(default=0)  # 文件大小，字节
+    publish_date: Optional[datetime] = Field(default=None)  # 发布日期
     magnet_link: str = Field(default="")  # 磁力链接
     torrent_url: str = Field(default="")  # 种子文件URL
     torrent_hash: str = Field(default="")  # 种子哈希
